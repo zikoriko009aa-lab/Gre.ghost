@@ -1,0 +1,49 @@
+
+name: Build GREEN GHOST APK
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'ULTRAS-GREEN-GHOST-EXPO.zip'
+      - '.github/workflows/build-apk.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Extract project
+        run: |
+          test -f ULTRAS-GREEN-GHOST-EXPO.zip
+          mkdir -p app
+          unzip -oq ULTRAS-GREEN-GHOST-EXPO.zip -d app
+          test -f app/app.json
+          test -f app/eas.json
+
+      - name: Install dependencies
+        working-directory: app
+        run: npm install
+
+      - name: Initialize Expo
+        working-directory: app
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: npx --yes eas-cli@latest init --force --non-interactive
+
+      - name: Build APK
+        working-directory: app
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: npx --yes eas-cli@latest build --platform android --profile preview --non-interactive --wait
